@@ -7,6 +7,8 @@ const LANConnection_1 = require("./LANConnection");
 const Message_1 = require("./messages/Message");
 const SearchMessage_1 = require("./messages/SearchMessage");
 const SearchResponseMessage_1 = require("./messages/SearchResponseMessage");
+Message_1.Message.registerMessageType(SearchMessage_1.SearchMessage);
+Message_1.Message.registerMessageType(SearchResponseMessage_1.SearchResponseMessage);
 class LANServerInfo {
     constructor(type = "server", name, address, port) {
         this.type = type;
@@ -98,9 +100,9 @@ class LANServer extends events_1.EventEmitter {
     handleSearchPacket(data, remote) {
         log_1.log("Advertiser received packet ...", data.toString('utf8'));
         let message = Message_1.Message.fromBuffer(data);
-        if (message && message.type == 'SearchMessage') {
-            log_1.log(" ... packet is search message, looking for types: ", message.getProperty("serverTypes"));
+        if (message && message.type == SearchMessage_1.SearchMessage.type) {
             let search = message;
+            log_1.log(" ... packet is search message, looking for types: ", search.serverTypes);
             if (search.serverTypes.indexOf(this._.type) >= 0 ||
                 search.serverTypes.indexOf("*") >= 0) {
                 log_1.log(" ... searching for this type of server, responding ...");
@@ -184,7 +186,7 @@ class LANServer extends events_1.EventEmitter {
     static handleSearchResult(data, remote) {
         log_1.log("Search received response packet ... ");
         var message = Message_1.Message.fromBuffer(data);
-        if (message.type === "SearchResponseMessage") {
+        if (message.type === SearchResponseMessage_1.SearchResponseMessage.type) {
             log_1.log(" ... of correct message type");
             var result = message;
             if (result.nonce === LANServer._searchNonce) {

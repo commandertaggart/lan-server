@@ -19,4 +19,6 @@ export class SearchMessage extends Message
 		return ('nonce' in this.properties) &&
 			   ('serverTypes' in this.properties)
 	}
+
+	static type:string = "lan-server.SearchMessage";
 }

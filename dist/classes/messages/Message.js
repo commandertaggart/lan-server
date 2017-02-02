@@ -5,12 +5,25 @@ class Message {
     constructor() {
         this.properties = {};
     }
-    get type() { return this.constructor.name; }
+    static registerMessageType(ctor) {
+        if (!('type' in ctor)) {
+            log_1.error('Message class does not define `static type:string;`');
+            return;
+        }
+        if (ctor['type'] in Message._messageTypes) {
+            log_1.error(`Message type "${ctor['type']}" already registered.`);
+        }
+        Message._messageTypes[ctor['type']] = ctor;
+    }
+    get type() { return this.constructor["type"]; }
     setProperty(name, value) {
         this.properties[name] = value;
     }
-    getProperty(name) {
-        return this.properties[name];
+    getProperty(name, defaultValue) {
+        if (name in this.properties)
+            return this.properties[name];
+        else
+            return defaultValue;
     }
     static fromBuffer(data) {
         let body = data.toString('utf8');
@@ -20,8 +33,8 @@ class Message {
         log_1.log("deserializing message ... ");
         log_1.log(" ... type:", type);
         log_1.log(" ... props:", props);
-        try {
-            let constructor = require('./' + type)[type];
+        let constructor = Message._messageTypes[type];
+        if (constructor) {
             let msg = new constructor();
             msg.properties = querystring.parse(props);
             log_1.log(msg);
@@ -29,8 +42,8 @@ class Message {
                 return msg;
             }
         }
-        catch (err) {
-            log_1.error(err);
+        else {
+            log_1.error(`Message type '${type}' not registered.`);
         }
         return null;
     }
@@ -40,5 +53,8 @@ class Message {
     }
     validate() { return true; }
 }
+Message._messageTypes = {};
+Message.type = "lan-server.Message";
 exports.Message = Message;
+Message.registerMessageType(Message);
 //# sourceMappingURL=Message.js.map

@@ -13,5 +13,6 @@ class SearchMessage extends Message_1.Message {
             ('serverTypes' in this.properties);
     }
 }
+SearchMessage.type = "lan-server.SearchMessage";
 exports.SearchMessage = SearchMessage;
 //# sourceMappingURL=SearchMessage.js.map

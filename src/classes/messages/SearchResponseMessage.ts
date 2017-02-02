@@ -35,4 +35,6 @@ export class SearchResponseMessage extends Message
 			   ('address' in this.properties) &&
 			   ('port' in this.properties) && (!isNaN(this.port));
 	}
+
+	static type:string = "lan-server.SearchResponseMessage";
 }

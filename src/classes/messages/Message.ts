@@ -5,6 +5,21 @@ import { log, error } from '../../util/log';
 
 export class Message
 {
+	private static _messageTypes = {};
+	static registerMessageType(ctor:new () => Message)
+	{
+		if (!('type' in ctor))
+		{
+			error('Message class does not define `static type:string;`');
+			return;
+		}
+
+		if (ctor['type'] in Message._messageTypes)
+		{ error(`Message type "${ctor['type']}" already registered.`); }
+
+		Message._messageTypes[ctor['type']] = ctor;
+	}
+
 	constructor()
 	{
 		this.properties = {};
@@ -12,17 +27,22 @@ export class Message
 
 	protected properties:Object;
 
+	static type:string = "lan-server.Message";
+
 	get type():string
-	{ return this.constructor.name; }
+	{ return this.constructor["type"]; }
 
 	setProperty(name:string, value:string)
 	{
 		this.properties[name] = value;
 	}
 
-	getProperty(name:string):string
+	getProperty(name:string, defaultValue?:string):string
 	{
-		return this.properties[name];
+		if (name in this.properties)
+			return this.properties[name];
+		else
+			return defaultValue;
 	}
 
 	static fromBuffer(data:Buffer):Message
@@ -36,10 +56,10 @@ export class Message
 		log(" ... type:", type);
 		log(" ... props:", props);
 
-		try
-		{
-			let constructor = require('./' + type)[type];
+		let constructor = Message._messageTypes[type];
 
+		if (constructor)
+		{
 			let msg:Message = new constructor();
 			msg.properties = querystring.parse(props);
 
@@ -48,8 +68,8 @@ export class Message
 			if (msg.validate())
 			{ return msg; }
 		}
-		catch (err)
-		{ error(err); }
+		else
+		{ error(`Message type '${type}' not registered.`); }
 
 		return null;
 	}
@@ -63,3 +83,5 @@ export class Message
 	validate():boolean
 	{ return true; }
 }
+
+Message.registerMessageType(Message);

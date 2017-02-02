@@ -8,4 +8,5 @@ export declare class SearchResponseMessage extends Message {
     address: string;
     port: number;
     validate(): boolean;
+    static type: string;
 }

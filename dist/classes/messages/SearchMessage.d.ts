@@ -4,4 +4,5 @@ export declare class SearchMessage extends Message {
     nonce: string;
     serverTypes: string[];
     validate(): boolean;
+    static type: string;
 }

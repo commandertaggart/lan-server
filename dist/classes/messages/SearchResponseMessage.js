@@ -25,5 +25,6 @@ class SearchResponseMessage extends Message_1.Message {
             ('port' in this.properties) && (!isNaN(this.port));
     }
 }
+SearchResponseMessage.type = "lan-server.SearchResponseMessage";
 exports.SearchResponseMessage = SearchResponseMessage;
 //# sourceMappingURL=SearchResponseMessage.js.map

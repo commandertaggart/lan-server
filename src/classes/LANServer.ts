@@ -10,6 +10,9 @@ import { Message } from './messages/Message';
 import { SearchMessage } from './messages/SearchMessage';
 import { SearchResponseMessage } from './messages/SearchResponseMessage';
 
+Message.registerMessageType(SearchMessage);
+Message.registerMessageType(SearchResponseMessage);
+
 export class LANServerInfo
 {
 	constructor(public type:string = "server",
@@ -138,10 +141,10 @@ export class LANServer extends EventEmitter
 	{
 		log("Advertiser received packet ...", data.toString('utf8'));
 		let message:Message = Message.fromBuffer(data);
-		if (message && message.type == 'SearchMessage')
+		if (message && message.type == SearchMessage.type)
 		{
-			log(" ... packet is search message, looking for types: ", message.getProperty("serverTypes"));
 			let search:SearchMessage = message as SearchMessage;
+			log(" ... packet is search message, looking for types: ", search.serverTypes);
 			if (search.serverTypes.indexOf(this._.type) >= 0 ||
 				search.serverTypes.indexOf("*") >= 0)
 			{
@@ -254,7 +257,7 @@ export class LANServer extends EventEmitter
 	{
 		log("Search received response packet ... ");
 		var message:Message = Message.fromBuffer(data);
-		if (message.type === "SearchResponseMessage")
+		if (message.type === SearchResponseMessage.type)
 		{
 			log(" ... of correct message type");
 			var result:SearchResponseMessage = message as SearchResponseMessage;
