@@ -1,0 +1,19 @@
+{
+  "name": "lan-server",
+  "version": "1.0.0",
+  "description": "LAN-discoverable socket server.",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^7.0.0",
+    "typescript": "^2.1.5"
+  },
+  "dependencies": {
+    "uuid": "^3.0.1"
+  }
+}
