@@ -11,7 +11,7 @@ let server = new LANServer('application.server-type' /* or whatever */, {
 	advertise: true
 }).on('connection', (connection:LANConnection) => {
 	connection.on('message', (message:Message) => {
-		// handle message
+		// dispatch message.payload object based on message.type
 	});
 });
 ```
@@ -32,44 +32,64 @@ LANServer.search('application.server-type' /* or "*" */, (foundServer:LANServerI
 
 ## Your messages
 
+There are two methods for creating custom messages.  The recommended method uses
+TypeScript decorator functions defined in `github:glikker/serialize-ts`:
+
 ```typescript
-import { Message } from 'lan-server';
+import { serializable, serialized } from 'serialize-ts';
 
-class MyMessage extends Message
+@serializable('my-app.my-message')
+class MyMessage
 {
-	constructor() { super(); }
+	constructor() { }
 
-	get messageProperty():string { return this.getProperty('messageProperty'); }
-	set messageProperty(mp:string) { this.setProperty('messageProperty', mp); }
-
-	get numberProperty():number { return parseFloat(this.getProperty('numberProperty'); }
-	set numberProperty(np:number) { this.setProperty('numberProperty', np.toString(10)); }
-
-	get optionalProperty():string { return this.getProperty('optionalProperty', "default"); }
-	set optionalProperty(mp:string) { this.setProperty('optionalProperty', mp); }
-
-	validate():boolean
-	{
-		return  ('messageProperty' in this.properties) &&
-				('numberProperty' in this.properties);
-				// but optionalProperty doesn't matter
-	}
-
-	static type:string = "application.MyMessage";
+	@serialized() messageProperty:string;
+	@serialized('int') numberProperty:number;
 }
 
-Message.registerMessageType(MyMessage);
+function sendMessage(conn:LANConnection)
+{
+	let msg:MyMessage = new MyMessage();
+	msg.messageProperty = "Hello";
+	msg.numberProperty = 42;
+
+	conn.send(new Message(msg));
+}
 
 function handleMessages(message:Message)
 {
-	if (message.type == MyMessage.type)
+	if (message.type == MyMessage['serializedType'])
 	{
-		let myMessage:MyMessage = <MyMessage>message;
+		let myMessage:MyMessage = <MyMessage>message.payload;
 
-		if (myMessage.optionalProperty != "default")
-		{
-			doMeaningfulStuffWith(myMessage.messageProperty, myMessage.numberProperty);
-		}
+		doMeaningfulStuffWith(myMessage);
 	}
 }
 ```
+
+If you are not using TypeScript or don't want to use `serialize-ts` directly
+(even though it is used under the hood for serializing packets), you can do it
+this way:
+
+```javascript
+function sendMessage(conn:LANConnection)
+{
+	conn.send(new Message({
+		messageProperty: "Hello",
+		numberProperty: 42
+	}, 'my-app.my-message'));
+}
+
+function handleMessages(message:Message)
+{
+	if (message.type == 'my-app.my-message')
+	{
+		doMeaningfulStuffWith(message.payload);
+	}
+}
+```
+
+These methods can be mixed and matched as well, so you can use formal classes
+as well as anonymous objects for message payloads.  You can also include a
+message type in the constructor to `Message` if you want to override the payload's
+`serializedType` value.
