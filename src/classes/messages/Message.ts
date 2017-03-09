@@ -1,87 +1,51 @@
 
 import * as querystring from 'querystring';
-
 import { log, error } from '../../util/log';
+import { Serializer } from 'serialize-ts';
 
 export class Message
 {
-	private static _messageTypes = {};
-	static registerMessageType(ctor:new () => Message)
+	public payload:Object;
+	public type:string;
+
+	constructor(payload:Object, type?:string)
 	{
-		if (!('type' in ctor))
-		{
-			error('Message class does not define `static type:string;`');
-			return;
-		}
+		if (!payload || (typeof(payload) !== 'object'))
+		{ throw new Error("Invalid payload"); }
 
-		if (ctor['type'] in Message._messageTypes)
-		{ error(`Message type "${ctor['type']}" already registered.`); }
+		this.payload = payload;
+		this.type = type || payload.constructor["serializedType"];
 
-		Message._messageTypes[ctor['type']] = ctor;
+		if (!this.type)
+		{ throw new Error("Message payload must be @serializable, or you must provide the message type."); }
+		if (Buffer.byteLength(this.type) > 0xFF)
+		{ throw new Error("Message ID too long: " + this.type); }
 	}
 
-	constructor()
+	public static headerString:string = "MSG:";
+	public static get headerSize():number
+	{ return Buffer.byteLength(Message.headerString, 'utf8'); }
+
+	public static fromBuffer(message:Buffer):Message
 	{
-		this.properties = {};
+		var idSize:number = message.readUInt16BE(0);
+		var id:string = message.toString('utf8', 2, idSize + 2);
+
+		var payload:Object = Serializer.fromBuffer(message.slice(idSize+2));
+		//console.log(payload);
+		return new Message(payload, id);
 	}
 
-	protected properties:Object;
-
-	static type:string = "lan-server.Message";
-
-	get type():string
-	{ return this.constructor["type"]; }
-
-	setProperty(name:string, value:string)
+	public toBuffer():Buffer
 	{
-		this.properties[name] = value;
+		var idSize:number = Buffer.byteLength(this.type);
+		var payloadBuffer:Buffer = Serializer.toBuffer(this.payload);
+		var packet:Buffer = Buffer.allocUnsafe(payloadBuffer.length + idSize + 2);
+
+		packet.writeUInt16BE(idSize, 0);
+		packet.write(this.type, 2, idSize, 'utf8');
+		payloadBuffer.copy(packet, idSize + 2);
+
+		return packet;
 	}
-
-	getProperty(name:string, defaultValue?:string):string
-	{
-		if (name in this.properties)
-			return this.properties[name];
-		else
-			return defaultValue;
-	}
-
-	static fromBuffer(data:Buffer):Message
-	{
-		let body:string = data.toString('utf8');
-		let div:number = body.indexOf('?');
-		let type:string = body.substr(0, div);
-		let props:string = body.substr(div+1);
-
-		log("deserializing message ... ");
-		log(" ... type:", type);
-		log(" ... props:", props);
-
-		let constructor = Message._messageTypes[type];
-
-		if (constructor)
-		{
-			let msg:Message = new constructor();
-			msg.properties = querystring.parse(props);
-
-			log(msg);
-
-			if (msg.validate())
-			{ return msg; }
-		}
-		else
-		{ error(`Message type '${type}' not registered.`); }
-
-		return null;
-	}
-
-	toBuffer():Buffer
-	{
-		return new Buffer(this.type + "?" +
-			querystring.stringify(this.properties), 'utf8');
-	}
-
-	validate():boolean
-	{ return true; }
 }
-
-Message.registerMessageType(Message);

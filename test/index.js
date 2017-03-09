@@ -1,7 +1,7 @@
 
 console.log("lan-server tests...");
 
-var ls = require('../dist');
+var ls = require('../dist/src');
 
 ls.setLogLevel(10);
 
@@ -10,8 +10,7 @@ var server = new ls.LANServer('server.test', {
 	autostart: true
 });
 
-var testMessage = new ls.Message();
-testMessage.setProperty('text', 'test');
+var testMessage = new ls.Message({ text: 'test' }, "test");
 
 server.on('connection', (connection) => {
 	console.log("client connected!");

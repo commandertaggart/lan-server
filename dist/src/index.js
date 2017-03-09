@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var log_1 = require("./util/log");
 exports.setLogLevel = log_1.setLogLevel;
 var LANServer_1 = require("./classes/LANServer");

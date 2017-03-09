@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var LogLevel;
 (function (LogLevel) {
     LogLevel[LogLevel["MUTE"] = 0] = "MUTE";
@@ -8,30 +9,31 @@ var LogLevel;
     LogLevel[LogLevel["VERBOSE"] = 4] = "VERBOSE";
 })(LogLevel = exports.LogLevel || (exports.LogLevel = {}));
 ;
-exports.logLevel = LogLevel.MUTE;
+var logLevel = LogLevel.MUTE;
 function log(...args) {
-    console.log('log(' + exports.logLevel + ')');
-    if (exports.logLevel >= LogLevel.VERBOSE) {
+    if (logLevel >= LogLevel.VERBOSE) {
         console.log.apply(console, args);
     }
 }
 exports.log = log;
 function info(...args) {
-    if (exports.logLevel >= LogLevel.INFO) {
+    if (logLevel >= LogLevel.INFO) {
         console.info.apply(console, args);
     }
 }
 exports.info = info;
 function warn(...args) {
-    if (exports.logLevel >= LogLevel.WARN) {
+    if (logLevel >= LogLevel.WARN) {
         console.warn.apply(console, args);
     }
 }
 exports.warn = warn;
 function error(...args) {
-    if (exports.logLevel >= LogLevel.ERROR) {
+    if (logLevel >= LogLevel.ERROR) {
         console.error.apply(console, args);
     }
 }
 exports.error = error;
+function setLogLevel(level) { logLevel = level; }
+exports.setLogLevel = setLogLevel;
 //# sourceMappingURL=log.js.map

@@ -37,8 +37,9 @@ export declare class LANServer extends EventEmitter {
     private static _searchTimer;
     private static _searchSocket;
     private static _searchNonce;
+    private static _searchResults;
     static search(type: string, callback: (found: LANServerInfo) => void): void;
-    static stopSearch(type?: string, callback?: (found: LANServerInfo) => void): void;
+    static stopSearch(type?: string, callback?: (server: LANServerInfo, active: boolean) => void): void;
     private static searchInterval();
     private static handleSearchResult(data, remote);
     static advertisingPort: number;

@@ -1,14 +1,13 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const net = require("net");
 const dgram = require("dgram");
 const events_1 = require("events");
 const log_1 = require("../util/log");
 const LANConnection_1 = require("./LANConnection");
 const Message_1 = require("./messages/Message");
-const SearchMessage_1 = require("./messages/SearchMessage");
-const SearchResponseMessage_1 = require("./messages/SearchResponseMessage");
-Message_1.Message.registerMessageType(SearchMessage_1.SearchMessage);
-Message_1.Message.registerMessageType(SearchResponseMessage_1.SearchResponseMessage);
+const SearchData_1 = require("./messages/SearchData");
+const SearchResponseData_1 = require("./messages/SearchResponseData");
 class LANServerInfo {
     constructor(type = "server", name, address, port) {
         this.type = type;
@@ -100,20 +99,20 @@ class LANServer extends events_1.EventEmitter {
     handleSearchPacket(data, remote) {
         log_1.log("Advertiser received packet ...", data.toString('utf8'));
         let message = Message_1.Message.fromBuffer(data);
-        if (message && message.type == SearchMessage_1.SearchMessage.type) {
-            let search = message;
+        if (message && message.type == SearchData_1.SearchData['serializedType']) {
+            let search = message.payload;
             log_1.log(" ... packet is search message, looking for types: ", search.serverTypes);
             if (search.serverTypes.indexOf(this._.type) >= 0 ||
                 search.serverTypes.indexOf("*") >= 0) {
                 log_1.log(" ... searching for this type of server, responding ...");
-                let response = new SearchResponseMessage_1.SearchResponseMessage();
+                let response = new SearchResponseData_1.SearchResponseData();
                 response.nonce = search.nonce;
                 response.name = this._.name;
                 response.serverType = this._.type;
                 response.version = '0';
                 response.address = this._.address.address;
                 response.port = this._.address.port;
-                this._advertisingSocket.send(response.toBuffer(), LANServer.advertisingPort + 1, remote.address);
+                this._advertisingSocket.send((new Message_1.Message(response)).toBuffer(), LANServer.advertisingPort + 1, remote.address);
                 log_1.log(" ... response sent.");
             }
         }
@@ -174,35 +173,64 @@ class LANServer extends events_1.EventEmitter {
             LANServer._searchSocket.close();
             LANServer._searchSocket = null;
             LANServer._searchNonce = null;
+            LANServer._searchResults = {};
         }
     }
     static searchInterval() {
-        let message = new SearchMessage_1.SearchMessage();
-        message.nonce = LANServer._searchNonce;
-        message.serverTypes = Object.keys(LANServer._searches);
-        log_1.log("Sending search packet (" + LANServer.advertisingPort + "):", message.toBuffer().toString('utf8'));
-        LANServer._searchSocket.send(message.toBuffer(), LANServer.advertisingPort, "255.255.255.255");
+        let data = new SearchData_1.SearchData();
+        data.nonce = LANServer._searchNonce;
+        data.serverTypes = Object.keys(LANServer._searches);
+        log_1.log("Sending search packet (" + LANServer.advertisingPort + "):", JSON.stringify(data));
+        for (var key in LANServer._searchResults) {
+            var cache = LANServer._searchResults[key];
+            ++cache.age;
+            if (cache.age > 3) {
+                delete LANServer._searchResults[key];
+                log_1.log(`Delisting stale server: ${cache.info.name}`);
+                if (cache.info.type in LANServer._searches) {
+                    LANServer._searches[cache.info.type].forEach((callback) => {
+                        callback(cache.info, false);
+                    });
+                }
+                if ('*' in LANServer._searches) {
+                    LANServer._searches['*'].forEach((callback) => {
+                        callback(cache.info, false);
+                    });
+                }
+            }
+        }
+        LANServer._searchSocket.send((new Message_1.Message(data)).toBuffer(), LANServer.advertisingPort, "255.255.255.255");
     }
     static handleSearchResult(data, remote) {
         log_1.log("Search received response packet ... ");
         var message = Message_1.Message.fromBuffer(data);
-        if (message.type === SearchResponseMessage_1.SearchResponseMessage.type) {
+        if (message.type === SearchResponseData_1.SearchResponseData['serializedType']) {
             log_1.log(" ... of correct message type");
-            var result = message;
+            var result = message.payload;
             if (result.nonce === LANServer._searchNonce) {
                 log_1.log(" ... in response to us");
                 var server = new LANServerInfo(result.serverType, result.name, result.address, result.port);
-                if (server.type in LANServer._searches) {
-                    log_1.log(`Sought-for server of type "${server.type}" found: ${server.name}`);
-                    LANServer._searches[server.type].forEach((callback) => {
-                        callback(server);
-                    });
+                var key = result.address + ":" + result.port;
+                var cache = LANServer._searchResults[key];
+                if (cache) {
+                    cache.age = 0;
                 }
-                if ('*' in LANServer._searches) {
-                    log_1.log(`Server of type "${server.type}" found: ${server.name}`);
-                    LANServer._searches['*'].forEach((callback) => {
-                        callback(server);
-                    });
+                else {
+                    cache = LANServer._searchResults[key] = {};
+                    cache.info = server;
+                    cache.age = 0;
+                    if (server.type in LANServer._searches) {
+                        log_1.log(`Sought-for server of type "${server.type}" found: ${server.name}`);
+                        LANServer._searches[server.type].forEach((callback) => {
+                            callback(server, true);
+                        });
+                    }
+                    if ('*' in LANServer._searches) {
+                        log_1.log(`Server of type "${server.type}" found: ${server.name}`);
+                        LANServer._searches['*'].forEach((callback) => {
+                            callback(server, true);
+                        });
+                    }
                 }
             }
         }
@@ -212,6 +240,7 @@ LANServer._searches = {};
 LANServer._searchTimer = null;
 LANServer._searchSocket = null;
 LANServer._searchNonce = null;
+LANServer._searchResults = {};
 LANServer.advertisingPort = 27614;
 exports.LANServer = LANServer;
 //# sourceMappingURL=LANServer.js.map
