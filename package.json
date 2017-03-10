@@ -2,10 +2,10 @@
   "name": "lan-server",
   "version": "1.0.0",
   "description": "LAN-discoverable socket server.",
-  "main": "./dist/src/index.js",
+  "main": "./dist/node/src/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node ./dist/test/index.js"
+    "test": "npm run build && node ./dist/node/test/index.js"
   },
   "author": "",
   "license": "MIT",
@@ -14,7 +14,8 @@
     "@types/node": "^7.0.0",
     "express": "^4.15.2",
     "fs-extra": "^2.0.0",
-    "typescript": "^2.1.5"
+    "typescript": "^2.1.5",
+    "webpack": "^2.2.1"
   },
   "dependencies": {
     "serialize-ts": "github:glikker/serialize-ts",

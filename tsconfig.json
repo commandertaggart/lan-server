@@ -7,7 +7,7 @@
 		"declaration": true,
 		"experimentalDecorators": true,
 
-		"outDir": "./dist"
+		"outDir": "./dist/node"
 	},
 	"include": [ "./src/**/*.ts", "./test/**/*.ts" ]
 }

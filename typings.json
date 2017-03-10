@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "express": "registry:dt/express#4.0.0+20170118060322",
-    "fs-extra": "registry:dt/fs-extra#0.0.0+20170109012028"
+    "fs-extra": "registry:dt/fs-extra#0.0.0+20170109012028",
+    "webpack": "registry:dt/webpack#2.2.0+20170310072209"
   }
 }
