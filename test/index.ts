@@ -1,28 +1,28 @@
 
 console.log("lan-server tests...");
 
-var ls = require('../dist/src');
+import { setLogLevel, LANServer, LANServerInfo, LANConnection, Message } from '../src';
 
-ls.setLogLevel(10);
+setLogLevel(10);
 
-var server = new ls.LANServer('server.test', {
+var server:LANServer = new LANServer('server.test', {
 	name: "Test Server",
 	autostart: true
 });
 
-var testMessage = new ls.Message({ text: 'test' }, "test");
+var testMessage:Message = new Message({ text: 'test' }, "test");
 
-server.on('connection', (connection) => {
+server.on('connection', (connection:LANConnection) => {
 	console.log("client connected!");
 	connection.on('message', console.log.bind(console, "[C>S]"));
 	setInterval(() => connection.send(testMessage), 1000);
 }).once('started', () => {
 
-	ls.LANServer.search("*", (serverInfo) => {
+	LANServer.search("*", (serverInfo:LANServerInfo) => {
 		console.log("found: " + serverInfo.name + " of type " + serverInfo.type);
-		ls.LANServer.stopSearch();
+		LANServer.stopSearch();
 
-		serverInfo.connect((connection) => {
+		serverInfo.connect((connection:LANConnection) => {
 			console.log("connected to server!");
 			connection.on('message', console.log.bind(console, "[S>C]"));
 			setInterval(() => connection.send(testMessage), 1500);
