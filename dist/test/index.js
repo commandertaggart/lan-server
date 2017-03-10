@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 console.log("lan-server tests...");
 const src_1 = require("../src");
+const startTestClient_1 = require("./startTestClient");
+const startWebServer_1 = require("./startWebServer");
 src_1.setLogLevel(10);
 var server = new src_1.LANServer('server.test', {
     name: "Test Server",
@@ -13,14 +15,7 @@ server.on('connection', (connection) => {
     connection.on('message', console.log.bind(console, "[C>S]"));
     setInterval(() => connection.send(testMessage), 1000);
 }).once('started', () => {
-    src_1.LANServer.search("*", (serverInfo) => {
-        console.log("found: " + serverInfo.name + " of type " + serverInfo.type);
-        src_1.LANServer.stopSearch();
-        serverInfo.connect((connection) => {
-            console.log("connected to server!");
-            connection.on('message', console.log.bind(console, "[S>C]"));
-            setInterval(() => connection.send(testMessage), 1500);
-        });
-    });
+    startTestClient_1.default();
 });
+startWebServer_1.default();
 //# sourceMappingURL=index.js.map
